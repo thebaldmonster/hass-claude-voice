@@ -1,0 +1,14 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Set up Claude Voice Assistant",
+                "description": "Enter your API keys for Claude and ElevenLabs",
+                "data": {
+                    "anthropic_api_key": "Anthropic API Key",
+                    "elevenlabs_api_key": "ElevenLabs API Key"
+                }
+            }
+        }
+    }
+}
