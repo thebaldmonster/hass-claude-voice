@@ -1,9 +1,7 @@
 """Constants for the Claude Voice integration."""
-from homeassistant.const import Platform
+from typing import Final
 
-DOMAIN = "claude_voice"
-PLATFORMS = [Platform.ASSIST_PIPELINE]
-
+DOMAIN: Final = "claude_voice"
 CONF_ANTHROPIC_API_KEY = "anthropic_api_key"
 CONF_ELEVENLABS_API_KEY = "elevenlabs_api_key"
 CONF_WAKE_WORDS = "wake_words"
