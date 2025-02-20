@@ -1,0 +1,6 @@
+{
+    "name": "Claude Voice Assistant",
+    "render_readme": true,
+    "domains": ["claude_voice"],
+    "homeassistant": "2025.2.0"
+}
