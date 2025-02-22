@@ -4,7 +4,7 @@ from typing import Any
 import asyncio
 
 from anthropic import AsyncAnthropic
-import elevenlabs
+from elevenlabs import Client
 from homeassistant.components import assist_pipeline
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
@@ -28,11 +28,11 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
         def init_clients():
             _LOGGER.debug("Initializing clients")
             anthropic_client = AsyncAnthropic(api_key=config[CONF_ANTHROPIC_API_KEY])
-            elevenlabs.set_api_key(config[CONF_ELEVENLABS_API_KEY])
-            return anthropic_client
+            eleven_client = Client(api_key=config[CONF_ELEVENLABS_API_KEY])
+            return anthropic_client, eleven_client
 
         # Initialize clients in executor
-        anthropic = await hass.async_add_executor_job(init_clients)
+        anthropic, eleven = await hass.async_add_executor_job(init_clients)
         _LOGGER.debug("Clients initialized")
 
         async def claude_pipeline(text: str) -> assist_pipeline.PipelineEvent:
@@ -63,7 +63,7 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
         _LOGGER.debug("Registering pipeline")
         assist_pipeline.async_register_pipeline(
             hass,
-            "claude_voice",  # Using string instead of DOMAIN constant
+            "claude_voice",
             "Claude Voice Assistant",
             "claude_pipeline",
             claude_pipeline,
