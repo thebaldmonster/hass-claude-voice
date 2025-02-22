@@ -3,7 +3,7 @@
     "name": "Claude Voice Assistant",
     "version": "1.0.0",
     "documentation": "https://github.com/thebaldmonster/hass-claude-voice",
-    "dependencies": ["assist_pipeline"],
+    "dependencies": ["assist_pipeline", "conversation"],
     "codeowners": ["@thebaldmonster"],
     "requirements": ["anthropic>=0.7.0", "elevenlabs>=0.3.0"],
     "config_flow": true,
