@@ -4,7 +4,7 @@ from typing import Any
 import asyncio
 
 from anthropic import AsyncAnthropic
-from elevenlabs import Client
+import elevenlabs
 from homeassistant.components import assist_pipeline
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
@@ -28,11 +28,11 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
         def init_clients():
             _LOGGER.debug("Initializing clients")
             anthropic_client = AsyncAnthropic(api_key=config[CONF_ANTHROPIC_API_KEY])
-            eleven_client = Client(api_key=config[CONF_ELEVENLABS_API_KEY])
-            return anthropic_client, eleven_client
+            elevenlabs.api_key = config[CONF_ELEVENLABS_API_KEY]
+            return anthropic_client
 
         # Initialize clients in executor
-        anthropic, eleven = await hass.async_add_executor_job(init_clients)
+        anthropic = await hass.async_add_executor_job(init_clients)
         _LOGGER.debug("Clients initialized")
 
         async def claude_pipeline(text: str) -> assist_pipeline.PipelineEvent:
