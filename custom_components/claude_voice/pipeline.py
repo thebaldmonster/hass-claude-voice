@@ -35,39 +35,34 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
         anthropic = await hass.async_add_executor_job(init_clients)
         _LOGGER.debug("Clients initialized")
 
-        async def claude_pipeline(text: str) -> assist_pipeline.PipelineEvent:
-            """Process text through Claude."""
+        async def claude_pipeline(pipeline: assist_pipeline.Pipeline, audio_data: bytes | None = None) -> None:
+            """Process pipeline from audio data."""
             try:
-                _LOGGER.debug("Processing text: %s", text)
                 message = await anthropic.messages.create(
                     model="claude-3-sonnet-20240229",
                     max_tokens=1024,
                     system="You are a helpful home assistant that can control smart home devices and answer questions knowledgeably.",
-                    messages=[{"role": "user", "content": text}]
+                    messages=[{"role": "user", "content": "How can I help you?"}]
                 )
-                _LOGGER.debug("Got response from Claude")
 
-                return assist_pipeline.PipelineEvent(
+                # Create pipeline event
+                event = assist_pipeline.PipelineEvent(
                     type="intent-end",
                     data={"text": message.content},
                 )
 
+                pipeline.async_pipeline_event(event)
+
             except Exception as err:
-                _LOGGER.error("Error processing Claude request: %s", err)
-                return assist_pipeline.PipelineEvent(
+                _LOGGER.error("Error processing voice command: %s", err)
+                event = assist_pipeline.PipelineEvent(
                     type="error",
                     data={"error": str(err)},
                 )
+                pipeline.async_pipeline_event(event)
 
-        # Register the pipeline
-        _LOGGER.debug("Registering pipeline")
-        assist_pipeline.async_register_pipeline(
-            hass,
-            "claude_voice",
-            "Claude Voice Assistant",
-            "claude_pipeline",
-            claude_pipeline,
-        )
+        # Register with pipeline
+        assist_pipeline.async_pipeline_from_audio(hass, claude_pipeline)
         _LOGGER.debug("Pipeline registered successfully")
 
     except Exception as err:
