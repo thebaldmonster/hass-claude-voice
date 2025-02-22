@@ -5,7 +5,7 @@
     "documentation": "https://github.com/thebaldmonster/hass-claude-voice",
     "dependencies": ["assist_pipeline"],
     "codeowners": ["@thebaldmonster"],
-    "requirements": ["anthropic>=0.7.0", "elevenlabs>=2.0.0"],
+    "requirements": ["anthropic>=0.7.0", "elevenlabs<=1.51.0"],
     "config_flow": true,
     "iot_class": "cloud_polling",
     "integration_type": "service"
