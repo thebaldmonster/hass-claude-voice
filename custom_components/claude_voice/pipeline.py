@@ -2,12 +2,14 @@
 import logging
 from typing import Any
 import asyncio
+from functools import partial
 
 from anthropic import AsyncAnthropic
 import elevenlabs
 from homeassistant.components import assist_pipeline
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import singleton
 
 from .const import (
     DOMAIN,
@@ -17,14 +19,28 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+@singleton.singleton("claude_voice_pipeline")
+async def get_anthropic_client(hass: HomeAssistant, api_key: str):
+    """Get Anthropic client."""
+    def create_client():
+        return AsyncAnthropic(api_key=api_key)
+    
+    # Run blocking client creation in executor
+    return await hass.async_add_executor_job(create_client)
+
 async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
     """Set up Claude pipeline."""
     
     config = hass.data[DOMAIN][config_entry.entry_id]
     
-    # Use AsyncAnthropic instead of Anthropic
-    anthropic = AsyncAnthropic(api_key=config[CONF_ANTHROPIC_API_KEY])
-    elevenlabs.set_api_key(config[CONF_ELEVENLABS_API_KEY])
+    # Initialize client in executor
+    anthropic = await get_anthropic_client(hass, config[CONF_ANTHROPIC_API_KEY])
+    
+    # Set ElevenLabs key
+    await hass.async_add_executor_job(
+        elevenlabs.set_api_key, 
+        config[CONF_ELEVENLABS_API_KEY]
+    )
 
     async def claude_pipeline(text: str) -> assist_pipeline.PipelineEvent:
         """Process text through Claude."""
