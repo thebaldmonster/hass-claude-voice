@@ -10,21 +10,18 @@ from homeassistant.helpers import singleton
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.setLevel(logging.DEBUG)  # Enable debug logging
+_LOGGER.setLevel(logging.DEBUG)
 
-@singleton.singleton("claude_voice_client")
-async def get_anthropic_client(hass: HomeAssistant, api_key: str):
+async def get_anthropic_client(api_key: str):
     """Get Anthropic client."""
     _LOGGER.debug("Creating new Anthropic client")
-    def create_client():
-        return AsyncAnthropic(api_key=api_key)
-    return await hass.async_add_executor_job(create_client)
+    return AsyncAnthropic(api_key=api_key)
 
 async def process_with_claude(hass: HomeAssistant, text: str, api_key: str) -> str:
     """Process text with Claude."""
     try:
         _LOGGER.debug("Starting Claude processing with text: %s", text)
-        client = await get_anthropic_client(hass, api_key)
+        client = await get_anthropic_client(api_key)
         
         _LOGGER.debug("Got client, sending request to Claude")
         response = await client.messages.create(

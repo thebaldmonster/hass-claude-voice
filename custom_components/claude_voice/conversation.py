@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, Context
+from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .pipeline import process_with_claude
@@ -55,14 +55,12 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
 
             return conversation.ConversationResult(
                 response=response,
-                conversation_id=user_input.conversation_id,
-                context=user_input.context
+                conversation_id=user_input.conversation_id
             )
 
         except Exception as err:
             _LOGGER.error("Error in conversation processing: %s", err)
             return conversation.ConversationResult(
                 response=f"I encountered an error: {str(err)}",
-                conversation_id=user_input.conversation_id,
-                context=user_input.context
+                conversation_id=user_input.conversation_id
             )
