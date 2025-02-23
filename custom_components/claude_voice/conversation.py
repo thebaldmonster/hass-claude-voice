@@ -13,13 +13,9 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Claude Voice from a config entry."""
-
-    conversation.async_set_agent(
-        hass,
-        entry,
-        ClaudeConversationAgent(hass, entry)
-    )
+    """Set up Claude Voice conversation."""
+    agent = ClaudeConversationAgent(hass, entry)
+    conversation.async_set_agent(hass, entry, agent)
     return True
 
 class ClaudeConversationAgent(conversation.AbstractConversationAgent):
@@ -29,6 +25,7 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
         """Initialize the agent."""
         self.hass = hass
         self.entry = entry
+        self.target_agent = conversation.DEFAULT_AGENT
 
     @property
     def supported_languages(self) -> list[str]:
@@ -39,10 +36,13 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
         self, user_input: conversation.ConversationInput
     ) -> conversation.ConversationResult:
         """Process a sentence."""
-        return conversation.ConversationResult(
-            response=user_input.text,
-            conversation_id=user_input.conversation_id,
+        response = await self.hass.components.conversation.async_converse(
+            user_input.text,
+            user_input.conversation_id,
+            user_input.context,
+            self.target_agent,
         )
+        return response
 
     @property
     def attribution(self) -> str:

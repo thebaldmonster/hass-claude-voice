@@ -1,18 +1,13 @@
 """Pipeline for Claude Voice Assistant."""
 import logging
 from typing import Any
+import asyncio
 
 from anthropic import AsyncAnthropic
 import elevenlabs
-from homeassistant.components import conversation
-from homeassistant.components.assist_pipeline import (
-    PipelineEvent,
-    PipelineEventType,
-    PipelineNotFound,
-    async_get_pipeline,
-)
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import intent
+from homeassistant.components import assist_pipeline
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     DOMAIN,
@@ -28,13 +23,22 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
         _LOGGER.debug("Starting Claude Voice pipeline setup")
         
         config = hass.data[DOMAIN][config_entry.entry_id]
-        
-        # Initialize clients in executor
-        anthropic = AsyncAnthropic(api_key=config[CONF_ANTHROPIC_API_KEY])
-        elevenlabs.api_key = config[CONF_ELEVENLABS_API_KEY]
+        _LOGGER.debug("Got config data")
 
-        async def process_speech(text: str) -> PipelineEvent:
-            """Process speech through Claude."""
+        # Initialize Anthropic client in executor
+        anthropic = await hass.async_add_executor_job(
+            lambda: AsyncAnthropic(api_key=config[CONF_ANTHROPIC_API_KEY])
+        )
+        
+        # Initialize ElevenLabs in executor
+        await hass.async_add_executor_job(
+            lambda: setattr(elevenlabs, 'api_key', config[CONF_ELEVENLABS_API_KEY])
+        )
+
+        _LOGGER.debug("Clients initialized")
+
+        async def claude_process(text: str) -> assist_pipeline.PipelineEvent:
+            """Process text through Claude."""
             try:
                 message = await anthropic.messages.create(
                     model="claude-3-sonnet-20240229",
@@ -43,51 +47,20 @@ async def async_setup_pipeline(hass: HomeAssistant, config_entry) -> None:
                     messages=[{"role": "user", "content": text}]
                 )
 
-                response = message.content
-                _LOGGER.debug("Claude response: %s", response)
-
-                # Generate speech from response
-                audio = elevenlabs.generate(
-                    text=response,
-                    voice="Josh",
-                    model="eleven_multilingual_v2"
-                )
-
-                return PipelineEvent(
-                    type=PipelineEventType.TTS_END,
-                    data={
-                        "text": response,
-                        "audio": audio,
-                    }
+                return assist_pipeline.PipelineEvent(
+                    type="intent-end",
+                    data={"text": message.content},
                 )
 
             except Exception as err:
-                _LOGGER.error("Error processing request: %s", err)
-                return PipelineEvent(
-                    type=PipelineEventType.ERROR,
-                    data={"error": str(err)}
+                _LOGGER.error("Error processing Claude request: %s", err)
+                return assist_pipeline.PipelineEvent(
+                    type="error",
+                    data={"error": str(err)},
                 )
 
-        # Register pipeline handler
-        @callback
-        def async_pipeline_handler(
-            pipeline_id: str,
-            event: PipelineEvent,
-            service_handler: Any
-        ) -> None:
-            """Handle pipeline events."""
-            if event.type == PipelineEventType.STT_END:
-                text = event.data["text"]
-                _LOGGER.debug("Processing text: %s", text)
-                hass.async_create_task(process_speech(text))
-
-        # Register with conversation agent
-        conversation.async_set_agent(
-            hass,
-            config_entry,
-            process_speech
-        )
-
+        # Store the processor
+        hass.data[DOMAIN]["processor"] = claude_process
         _LOGGER.debug("Pipeline setup complete")
 
     except Exception as err:
