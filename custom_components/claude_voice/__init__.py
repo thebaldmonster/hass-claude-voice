@@ -2,10 +2,8 @@
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.components import conversation
 
 from .const import DOMAIN
-from .pipeline import async_setup_pipeline
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
 
-    # Set up platform
+    # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
     return True
