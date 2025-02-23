@@ -13,7 +13,7 @@ from .pipeline import process_with_claude
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities=None) -> bool:
     """Set up Claude Voice conversation."""
     api_key = entry.data["anthropic_api_key"]
     
