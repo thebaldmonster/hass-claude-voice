@@ -3,7 +3,6 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components import conversation
-from homeassistant.components.assist_pipeline import Pipeline
 
 from .const import DOMAIN
 from .pipeline import async_setup_pipeline
@@ -22,18 +21,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
 
-    await async_setup_pipeline(hass, entry)
-
-    # Create pipeline without explicit name
-    pipeline = Pipeline(
-        conversation_engine="claude_voice",
-        language="en",
-        debug=True,
-    )
-
-    hass.data[DOMAIN]["pipeline"] = pipeline
-
+    # Set up platform
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
