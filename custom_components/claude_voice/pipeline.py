@@ -12,8 +12,8 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
-async def get_anthropic_client(api_key: str):
-    """Get Anthropic client."""
+def create_anthropic_client(api_key: str):
+    """Create Anthropic client in executor."""
     _LOGGER.debug("Creating new Anthropic client")
     return AsyncAnthropic(api_key=api_key)
 
@@ -21,7 +21,8 @@ async def process_with_claude(hass: HomeAssistant, text: str, api_key: str) -> s
     """Process text with Claude."""
     try:
         _LOGGER.debug("Starting Claude processing with text: %s", text)
-        client = await get_anthropic_client(api_key)
+        # Create client in executor to avoid blocking calls
+        client = await hass.async_add_executor_job(create_anthropic_client, api_key)
         
         _LOGGER.debug("Got client, sending request to Claude")
         response = await client.messages.create(
