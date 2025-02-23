@@ -6,7 +6,8 @@ from typing import Any
 
 from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, Context
+from homeassistant.helpers import intent
 
 from .const import DOMAIN
 from .pipeline import process_with_claude
@@ -39,18 +40,29 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
         self, user_input: conversation.ConversationInput
     ) -> conversation.ConversationResult:
         """Process a sentence."""
-        response = await process_with_claude(
-            self.hass,
-            user_input.text,
-            self.api_key
-        )
-        
-        return conversation.ConversationResult(
-            response=response,
-            conversation_id=user_input.conversation_id
-        )
+        try:
+            _LOGGER.debug("Processing input: %s", user_input.text)
+            
+            response = await process_with_claude(
+                self.hass,
+                user_input.text,
+                self.api_key
+            )
+            
+            _LOGGER.debug("Got response: %s", response)
 
-    @property
-    def attribution(self) -> str:
-        """Return the attribution."""
-        return "Powered by Claude"
+            # Create a context for the response
+            context = Context(user_id=user_input.context.user_id)
+
+            return conversation.ConversationResult(
+                response=response,
+                conversation_id=user_input.conversation_id,
+                context=context
+            )
+        except Exception as err:
+            _LOGGER.error("Error processing conversation: %s", err)
+            return conversation.ConversationResult(
+                response="I'm sorry, I encountered an error processing your request.",
+                conversation_id=user_input.conversation_id,
+                context=user_input.context
+            )
