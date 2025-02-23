@@ -10,10 +10,12 @@ from homeassistant.helpers import singleton
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.setLevel(logging.DEBUG)  # Enable debug logging
 
 @singleton.singleton("claude_voice_client")
 async def get_anthropic_client(hass: HomeAssistant, api_key: str):
     """Get Anthropic client."""
+    _LOGGER.debug("Creating new Anthropic client")
     def create_client():
         return AsyncAnthropic(api_key=api_key)
     return await hass.async_add_executor_job(create_client)
@@ -21,19 +23,23 @@ async def get_anthropic_client(hass: HomeAssistant, api_key: str):
 async def process_with_claude(hass: HomeAssistant, text: str, api_key: str) -> str:
     """Process text with Claude."""
     try:
-        _LOGGER.debug("Getting Claude client")
+        _LOGGER.debug("Starting Claude processing with text: %s", text)
         client = await get_anthropic_client(hass, api_key)
         
-        _LOGGER.debug("Sending request to Claude")
+        _LOGGER.debug("Got client, sending request to Claude")
         response = await client.messages.create(
             model="claude-3-sonnet-20240229",
             max_tokens=1024,
-            system="You are a helpful home assistant that can control smart home devices and answer questions knowledgeably. Keep responses concise and natural.",
-            messages=[{"role": "user", "content": text}]
+            system="You are Claude, an AI assistant integrated with Home Assistant. You can help with home automation and answer questions. Always acknowledge that you are Claude when asked.",
+            messages=[{
+                "role": "user",
+                "content": text
+            }]
         )
         
-        _LOGGER.debug("Got response from Claude")
+        _LOGGER.debug("Got response from Claude: %s", response.content)
         return response.content
+
     except Exception as err:
-        _LOGGER.error("Error in Claude processing: %s", err)
-        raise
+        _LOGGER.error("Error in Claude processing: %s", str(err))
+        return f"I encountered an error: {str(err)}"

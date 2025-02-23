@@ -7,15 +7,16 @@ from typing import Any
 from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, Context
-from homeassistant.helpers import intent
 
 from .const import DOMAIN
 from .pipeline import process_with_claude
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.setLevel(logging.DEBUG)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities=None) -> bool:
     """Set up Claude Voice conversation."""
+    _LOGGER.debug("Setting up Claude Voice conversation")
     api_key = entry.data["anthropic_api_key"]
     
     conversation_agent = ClaudeConversationAgent(hass, api_key)
@@ -30,6 +31,7 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
         """Initialize the agent."""
         self.hass = hass
         self.api_key = api_key
+        _LOGGER.debug("Initialized Claude Conversation Agent")
 
     @property
     def supported_languages(self) -> list[str]:
@@ -41,7 +43,7 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
     ) -> conversation.ConversationResult:
         """Process a sentence."""
         try:
-            _LOGGER.debug("Processing input: %s", user_input.text)
+            _LOGGER.debug("Processing conversation input: %s", user_input.text)
             
             response = await process_with_claude(
                 self.hass,
@@ -49,20 +51,18 @@ class ClaudeConversationAgent(conversation.AbstractConversationAgent):
                 self.api_key
             )
             
-            _LOGGER.debug("Got response: %s", response)
-
-            # Create a context for the response
-            context = Context(user_id=user_input.context.user_id)
+            _LOGGER.debug("Got Claude response: %s", response)
 
             return conversation.ConversationResult(
                 response=response,
                 conversation_id=user_input.conversation_id,
-                context=context
+                context=user_input.context
             )
+
         except Exception as err:
-            _LOGGER.error("Error processing conversation: %s", err)
+            _LOGGER.error("Error in conversation processing: %s", err)
             return conversation.ConversationResult(
-                response="I'm sorry, I encountered an error processing your request.",
+                response=f"I encountered an error: {str(err)}",
                 conversation_id=user_input.conversation_id,
                 context=user_input.context
             )
