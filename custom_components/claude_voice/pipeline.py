@@ -26,7 +26,7 @@ async def process_with_claude(hass: HomeAssistant, text: str, api_key: str) -> s
         
         _LOGGER.debug("Got client, sending request to Claude")
         response = await client.messages.create(
-            model="claude-3-sonnet-20240229",
+            model="claude-3-sonnet",
             max_tokens=1024,
             system="You are Claude, an AI assistant integrated with Home Assistant. You can help with home automation and answer questions. Always acknowledge that you are Claude when asked.",
             messages=[{
