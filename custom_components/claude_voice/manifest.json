@@ -1,7 +1,7 @@
 {
     "domain": "claude_voice",
     "name": "Claude Voice Assistant",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "documentation": "https://github.com/thebaldmonster/hass-claude-voice",
     "dependencies": ["conversation"],
     "codeowners": ["@thebaldmonster"],
